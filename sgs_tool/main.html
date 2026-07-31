@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>网页导航</title>
+    <style>
+        /* ----- 全局重置 & 字体 ----- */
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background: #f5f7fb;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        /* ----- 主卡片容器 ----- */
+        .container {
+            max-width: 680px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 28px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(0, 0, 0, 0.04);
+            padding: 40px 36px 44px;
+            transition: box-shadow 0.25s ease;
+        }
+
+        .container:hover {
+            box-shadow: 0 28px 72px rgba(0, 0, 0, 0.10), 0 8px 24px rgba(0, 0, 0, 0.04);
+        }
+
+        /* ----- 头部 ----- */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 4px;
+        }
+
+        .header .icon {
+            font-size: 32px;
+            line-height: 1;
+        }
+
+        .header h1 {
+            font-size: 26px;
+            font-weight: 600;
+            color: #1a202c;
+            letter-spacing: -0.3px;
+        }
+
+        .subtitle {
+            font-size: 15px;
+            color: #718096;
+            margin-top: 4px;
+            margin-bottom: 28px;
+            padding-left: 2px;
+            border-left: 3px solid #e2e8f0;
+            padding-left: 14px;
+        }
+
+        .subtitle span {
+            background: #edf2f7;
+            padding: 0 10px;
+            border-radius: 20px;
+            font-weight: 500;
+            color: #2d3748;
+        }
+
+        /* ----- 链接列表 ----- */
+        .link-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .link-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f7fafc;
+            border-radius: 14px;
+            padding: 14px 20px;
+            text-decoration: none;
+            color: #2d3748;
+            transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+
+        .link-item:hover {
+            background: #edf2f7;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+            border-color: #e2e8f0;
+        }
+
+        .link-item:active {
+            transform: scale(0.98);
+        }
+
+        /* 左侧：序号 + 显示名称 */
+        .link-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            min-width: 0;
+        }
+
+        .link-index {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 28px;
+            background: #e2e8f0;
+            border-radius: 50%;
+            font-size: 13px;
+            font-weight: 600;
+            color: #4a5568;
+            flex-shrink: 0;
+        }
+
+        .link-name {
+            font-size: 17px;
+            font-weight: 500;
+            color: #1a202c;
+            letter-spacing: 0.2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* 右箭头 */
+        .link-arrow {
+            color: #cbd5e0;
+            font-size: 20px;
+            margin-left: 8px;
+            flex-shrink: 0;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+
+        .link-item:hover .link-arrow {
+            color: #4a5568;
+            transform: translateX(3px);
+        }
+
+        .link-item:nth-child(1) { animation-delay: 0.03s; }
+        .link-item:nth-child(2) { animation-delay: 0.06s; }
+        .link-item:nth-child(3) { animation-delay: 0.09s; }
+        .link-item:nth-child(4) { animation-delay: 0.12s; }
+        .link-item:nth-child(5) { animation-delay: 0.15s; }
+        .link-item:nth-child(6) { animation-delay: 0.18s; }
+        .link-item:nth-child(7) { animation-delay: 0.21s; }
+        .link-item:nth-child(8) { animation-delay: 0.24s; }
+        .link-item:nth-child(9) { animation-delay: 0.27s; }
+        .link-item:nth-child(10) { animation-delay: 0.30s; }
+
+        /* ----- 空状态（无页面时） ----- */
+        .empty-state {
+            text-align: center;
+            padding: 36px 16px;
+            color: #a0aec0;
+            font-size: 15px;
+            background: #f7fafc;
+            border-radius: 16px;
+            border: 1px dashed #e2e8f0;
+        }
+
+        .empty-state code {
+            background: #edf2f7;
+            padding: 2px 10px;
+            border-radius: 6px;
+            font-family: "SF Mono", "Menlo", monospace;
+            color: #4a5568;
+        }
+
+        /* ----- 响应式 ----- */
+        @media (max-width: 500px) {
+            .container {
+                padding: 28px 18px 32px;
+                border-radius: 20px;
+            }
+
+            .header h1 {
+                font-size: 22px;
+            }
+
+            .header .icon {
+                font-size: 26px;
+            }
+
+            .link-item {
+                padding: 12px 14px;
+                border-radius: 12px;
+            }
+
+            .link-name {
+                font-size: 15px;
+            }
+
+            .link-index {
+                width: 24px;
+                height: 24px;
+                font-size: 11px;
+            }
+
+            .link-arrow {
+                font-size: 18px;
+            }
+
+            .subtitle {
+                font-size: 13px;
+                margin-bottom: 22px;
+                padding-left: 10px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .link-item {
+                flex-wrap: wrap;
+                gap: 6px;
+            }
+
+            .link-arrow {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- ===== 头部 ===== -->
+        <div class="header">
+            <span class="icon">📂</span>
+            <h1>网页导航</h1>
+        </div>
+        <div class="subtitle">
+            点击卡片打开对应页面 &nbsp;·&nbsp; 共 <span id="pageCount">0</span> 个
+        </div>
+
+        <!-- ===== 链接列表 ===== -->
+        <div class="link-list" id="linkList"></div>
+
+    </div>
+
+    <script>
+        /**
+         * ============================================================
+         *  📌 维护区 —— 在这里增删改链接条目即可
+         * ============================================================
+         *  格式：{ file: '文件名.html', display: '显示名称' }
+         *  显示名称会展示给用户，文件名用于实际跳转。
+         *  新增时直接复制一行，修改 file 和 display 即可。
+         * ============================================================
+         */
+        const pagesData = [
+            { file: 'XY123.html', display: 'XY123 黄月英' },
+            { file: 'XY127.html', display: 'XY127 應龍' },
+            { file: 'XY192.html', display: 'XY192 炸彈貓' },
+            { file: 'XY203.html', display: 'XY203 春埼美空' },
+            { file: 'XY212.html', display: 'XY212 兵部京介' },
+            // 👇 以后新增页面，在这里追加即可，例如：
+            // { file: 'XY999.html', display: 'XY999 新角色' },
+        ];
+
+        /**
+         * ============================================================
+         *  渲染逻辑（无需修改）
+         * ============================================================
+         */
+        const listEl = document.getElementById('linkList');
+        const countEl = document.getElementById('pageCount');
+
+        countEl.textContent = pagesData.length;
+        listEl.innerHTML = '';
+
+        if (pagesData.length === 0) {
+            listEl.innerHTML = `
+                <div class="empty-state">
+                    📭 暂无页面，请在 <code>pagesData</code> 中添加条目
+                </div>
+            `;
+        } else {
+            pagesData.forEach((item, index) => {
+                const a = document.createElement('a');
+                a.className = 'link-item';
+                a.href = item.file;
+                a.target = '_self';
+
+                a.innerHTML = `
+                    <div class="link-info">
+                        <span class="link-index">${index + 1}</span>
+                        <span class="link-name">${escapeHtml(item.display)}</span>
+                    </div>
+                    <span class="link-arrow">›</span>
+                `;
+
+                listEl.appendChild(a);
+            });
+        }
+
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        console.log('✅ 导航已加载，共 ' + pagesData.length + ' 个页面。');
+        console.log('📝 如需增删改，请编辑 pagesData 数组。');
+    </script>
+
+</body>
+</html>

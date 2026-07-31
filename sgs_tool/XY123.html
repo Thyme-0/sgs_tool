@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>錦囊牌抽卡系統</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-user-select: none;
+        }
+        body {
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+            background: #1a1a2e;
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            touch-action: pan-y;
+        }
+        .app {
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        /* header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 12px;
+            background: #16213e;
+            padding: 14px 24px;
+            border-radius: 16px;
+            border: 1px solid #2a3a6a;
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 22px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #f7d875, #e8b830);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+        }
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .header-controls button {
+            padding: 8px 18px;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: #2a3a6a;
+            color: #eee;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            touch-action: manipulation;
+        }
+        .header-controls button:hover {
+            transform: translateY(-2px);
+            filter: brightness(1.2);
+        }
+        .header-controls button.primary {
+            background: linear-gradient(135deg, #e8b830, #c9920a);
+            color: #1a1a2e;
+        }
+        .header-controls button.primary:hover {
+            box-shadow: 0 0 20px rgba(232, 184, 48, 0.3);
+        }
+        .header-controls button.danger {
+            background: #c0392b;
+        }
+        .header-controls button.info {
+            background: #2980b9;
+        }
+        .mode-toggle {
+            display: flex;
+            background: #0f1a30;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #2a3a6a;
+        }
+        .mode-toggle button {
+            padding: 8px 16px;
+            border: none;
+            background: transparent;
+            color: #8899bb;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.25s;
+            border-radius: 0;
+            letter-spacing: 0.5px;
+            touch-action: manipulation;
+        }
+        .mode-toggle button.active {
+            background: #2a3a6a;
+            color: #f7d875;
+            box-shadow: inset 0 0 10px rgba(247, 216, 117, 0.1);
+        }
+        .mode-toggle button:first-child {
+            border-radius: 10px 0 0 10px;
+        }
+        .mode-toggle button:last-child {
+            border-radius: 0 10px 10px 0;
+        }
+        .deck-info {
+            font-size: 14px;
+            color: #8899bb;
+            padding: 4px 12px;
+            background: #0f1a30;
+            border-radius: 8px;
+            border: 1px solid #1a2a4a;
+            white-space: nowrap;
+        }
+        .deck-info span {
+            color: #f7d875;
+            font-weight: 700;
+        }
+
+        /* hand area */
+        .hand-area {
+            background: #0f1a30;
+            border-radius: 16px;
+            border: 1px solid #1a2a4a;
+            padding: 18px 20px 14px;
+            min-height: 240px;
+            margin-bottom: 16px;
+            position: relative;
+            transition: all 0.3s;
+        }
+        .hand-area .hand-label {
+            font-size: 13px;
+            color: #556688;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hand-area .hand-label .count {
+            color: #8899bb;
+            background: #1a2a4a;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+        }
+        .hand-cards {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            min-height: 180px;
+            align-items: flex-start;
+            padding: 4px 0;
+        }
+        .hand-cards.empty {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #445566;
+            font-size: 16px;
+            letter-spacing: 1px;
+            min-height: 160px;
+        }
+
+        /* card */
+        .card {
+            width: 140px;
+            min-height: 196px;
+            background: linear-gradient(145deg, #f5f0e8, #e8e0d4);
+            border-radius: 12px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 215, 100, 0.15);
+            padding: 12px 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+            position: relative;
+            flex-shrink: 0;
+            color: #1a1a2e;
+            touch-action: none;
+        }
+        .card:hover {
+            transform: translateY(-6px) scale(1.02);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+        }
+        .card.selected {
+            transform: translateY(-20px) scale(1.04);
+            box-shadow: 0 16px 40px rgba(247, 216, 117, 0.3), 0 0 0 2px #f7d875;
+        }
+        .card .card-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1a1a2e;
+            line-height: 1.3;
+            padding: 4px 0;
+            word-break: break-word;
+            max-width: 100%;
+        }
+        .card .card-pack {
+            font-size: 11px;
+            color: #888;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+            font-weight: 400;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            padding-top: 6px;
+            width: 100%;
+        }
+        .card .card-version {
+            font-size: 10px;
+            color: #aa8866;
+            margin-top: 2px;
+            font-weight: 400;
+            background: rgba(0, 0, 0, 0.04);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .card.delay {
+            border: 3px solid #e74c3c;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px #e74c3c55;
+        }
+        .card.delay .card-name {
+            color: #c0392b;
+        }
+        .card.delay::after {
+            content: '⏳ 延时';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #e74c3c;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(231, 76, 60, 0.4);
+        }
+        .card.force {
+            border: 3px solid #9b59b6;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5), 0 0 0 1px #9b59b655;
+        }
+        .card.force .card-name {
+            color: #7d3c98;
+        }
+        .card.force::after {
+            content: '⚔ 势力';
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background: #9b59b6;
+            color: #fff;
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 10px;
+            border-radius: 20px;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 10px rgba(155, 89, 182, 0.4);
+        }
+        .card .special-term {
+            color: #2980b9;
+            font-weight: 700;
+            cursor: help;
+            border-bottom: 1px dashed #2980b9;
+            transition: all 0.2s;
+        }
+        .card .special-term:hover {
+            background: #2980b9;
+            color: #fff;
+            border-radius: 4px;
+            padding: 0 4px;
+        }
+
+        /* description panel */
+        .desc-panel {
+            background: #0f1a30;
+            border-radius: 12px;
+            border: 1px solid #1a2a4a;
+            padding: 14px 20px;
+            margin-bottom: 16px;
+            min-height: 70px;
+            display: flex;
+            align-items: center;
+            transition: all 0.3s;
+        }
+        .desc-panel .empty {
+            color: #445566;
+            font-size: 14px;
+            letter-spacing: 1px;
+        }
+        .desc-panel .desc-content {
+            width: 100%;
+        }
+        .desc-panel .desc-content .dname {
+            font-size: 18px;
+            font-weight: 700;
+            color: #f7d875;
+            margin-right: 12px;
+        }
+        .desc-panel .desc-content .dpack {
+            font-size: 13px;
+            color: #8899bb;
+        }
+        .desc-panel .desc-content .dtext {
+            margin-top: 6px;
+            font-size: 15px;
+            line-height: 1.7;
+            color: #dde;
+        }
+        .desc-panel .desc-content .dtext .special-term {
+            color: #5dade2;
+            font-weight: 600;
+            cursor: help;
+            border-bottom: 1px dashed #5dade2;
+        }
+        .desc-panel .desc-content .dtext .special-term:hover {
+            background: #5dade2;
+            color: #1a1a2e;
+            border-radius: 4px;
+            padding: 0 4px;
+        }
+
+        /* discard area */
+        .discard-area {
+            background: #0f1a30;
+            border-radius: 16px;
+            border: 2px dashed #2a3a6a;
+            padding: 14px 20px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            margin-bottom: 16px;
+            color: #445566;
+            font-size: 14px;
+            letter-spacing: 1px;
+            position: relative;
+            touch-action: none;
+        }
+        .discard-area.drag-over {
+            border-color: #e74c3c;
+            background: #1a0f1a;
+            box-shadow: inset 0 0 30px rgba(231, 76, 60, 0.05);
+        }
+        .discard-area .discard-label {
+            position: absolute;
+            top: 6px;
+            left: 16px;
+            font-size: 12px;
+            color: #445566;
+            letter-spacing: 2px;
+        }
+        .discard-area .discard-count {
+            font-size: 13px;
+            color: #8899bb;
+            background: #1a2a4a;
+            padding: 2px 14px;
+            border-radius: 20px;
+        }
+
+        /* modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(6px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            animation: fadeIn 0.25s;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal {
+            background: #1a1a2e;
+            border-radius: 20px;
+            max-width: 1200px;
+            width: 100%;
+            max-height: 90vh;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #2a3a6a;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6);
+            animation: slideUp 0.3s;
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 24px;
+            border-bottom: 1px solid #1a2a4a;
+            flex-shrink: 0;
+        }
+        .modal-header h2 {
+            font-size: 20px;
+            color: #f7d875;
+            letter-spacing: 2px;
+        }
+        .modal-header .close-btn {
+            background: none;
+            border: none;
+            color: #8899bb;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.2s;
+            line-height: 1;
+            padding: 0 8px;
+        }
+        .modal-header .close-btn:hover {
+            color: #fff;
+            transform: rotate(90deg);
+        }
+        .modal-body {
+            padding: 20px 24px 24px;
+            overflow-y: auto;
+            flex: 1;
+        }
+        .modal-body::-webkit-scrollbar {
+            width: 6px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+            background: #0f1a30;
+            border-radius: 10px;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+            background: #2a3a6a;
+            border-radius: 10px;
+        }
+
+        /* encyclopedia */
+        .encyclopedia .type-group {
+            margin-bottom: 28px;
+        }
+        .encyclopedia .type-group h3 {
+            font-size: 18px;
+            color: #f7d875;
+            border-bottom: 1px solid #1a2a4a;
+            padding-bottom: 8px;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+        }
+        .encyclopedia .pack-group {
+            margin-bottom: 18px;
+        }
+        .encyclopedia .pack-group h4 {
+            font-size: 14px;
+            color: #8899bb;
+            margin-bottom: 10px;
+            padding-left: 4px;
+            font-weight: 400;
+            letter-spacing: 1px;
+        }
+        .encyclopedia .card-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .encyclopedia .card-grid .mini-card {
+            width: 110px;
+            background: #0f1a30;
+            border: 1px solid #1a2a4a;
+            border-radius: 8px;
+            padding: 8px 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 13px;
+            color: #dde;
+        }
+        .encyclopedia .card-grid .mini-card:hover {
+            border-color: #f7d875;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .encyclopedia .card-grid .mini-card .mc-name {
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .encyclopedia .card-grid .mini-card .mc-pack {
+            font-size: 10px;
+            color: #667;
+            margin-top: 2px;
+        }
+        .encyclopedia .card-grid .mini-card.delay-mini {
+            border-color: #e74c3c;
+        }
+        .encyclopedia .card-grid .mini-card.delay-mini .mc-name {
+            color: #e74c3c;
+        }
+        .encyclopedia .card-grid .mini-card.force-mini {
+            border-color: #9b59b6;
+        }
+        .encyclopedia .card-grid .mini-card.force-mini .mc-name {
+            color: #9b59b6;
+        }
+
+        /* tooltip */
+        .tooltip-wrap {
+            position: relative;
+            display: inline-block;
+        }
+        .tooltip-text {
+            display: none;
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f1a30;
+            border: 1px solid #2a3a6a;
+            border-radius: 10px;
+            padding: 10px 16px;
+            font-size: 13px;
+            color: #dde;
+            width: 320px;
+            max-width: 90vw;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            z-index: 200;
+            line-height: 1.6;
+            text-align: left;
+            font-weight: 400;
+            pointer-events: none;
+        }
+        .tooltip-text::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 8px solid transparent;
+            border-top-color: #2a3a6a;
+        }
+        .tooltip-wrap:hover .tooltip-text {
+            display: block;
+        }
+
+        /* animations */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(40px) scale(0.96);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+        @keyframes cardDraw {
+            0% {
+                transform: scale(0.5) rotate(-10deg);
+                opacity: 0;
+            }
+            60% {
+                transform: scale(1.1) rotate(2deg);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) rotate(0);
+                opacity: 1;
+            }
+        }
+        .card-draw-anim {
+            animation: cardDraw 0.4s ease-out;
+        }
+
+        /* drag clone */
+        .card-dragging {
+            position: fixed !important;
+            z-index: 999 !important;
+            pointer-events: none !important;
+            transform: scale(1.05) rotate(2deg) !important;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.7) !important;
+            opacity: 0.9 !important;
+            transition: none !important;
+            touch-action: none;
+        }
+        .card-dragging-original {
+            opacity: 0.4 !important;
+            transform: scale(0.95) !important;
+        }
+
+        /* responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+            }
+            .header-controls {
+                justify-content: center;
+            }
+            .card {
+                width: 110px;
+                min-height: 154px;
+                padding: 8px 6px;
+            }
+            .card .card-name {
+                font-size: 14px;
+            }
+            .card .card-pack {
+                font-size: 9px;
+            }
+            .modal {
+                max-height: 95vh;
+            }
+            .modal-body {
+                padding: 12px 14px;
+            }
+            .encyclopedia .card-grid .mini-card {
+                width: 90px;
+                font-size: 11px;
+                padding: 6px 4px;
+            }
+            .desc-panel .desc-content .dtext {
+                font-size: 13px;
+            }
+            .hand-cards {
+                gap: 8px;
+            }
+            .discard-area {
+                min-height: 60px;
+            }
+            .header h1 {
+                font-size: 18px;
+                text-align: center;
+            }
+            .mode-toggle button {
+                padding: 6px 12px;
+                font-size: 12px;
+            }
+            .header-controls button {
+                font-size: 12px;
+                padding: 6px 12px;
+            }
+            .deck-info {
+                font-size: 12px;
+            }
+        }
+        @media (max-width: 480px) {
+            .card {
+                width: 85px;
+                min-height: 119px;
+                padding: 6px 4px;
+                border-radius: 8px;
+            }
+            .card .card-name {
+                font-size: 11px;
+            }
+            .card .card-pack {
+                font-size: 8px;
+                padding-top: 3px;
+                margin-top: 2px;
+            }
+            .card .card-version {
+                font-size: 7px;
+                padding: 1px 5px;
+            }
+            .card.delay::after,
+            .card.force::after {
+                font-size: 7px;
+                padding: 1px 6px;
+                top: -5px;
+                right: -5px;
+            }
+            .hand-cards {
+                gap: 6px;
+            }
+            .header-controls {
+                gap: 6px;
+            }
+            .desc-panel {
+                padding: 10px 14px;
+                min-height: 50px;
+            }
+            .desc-panel .desc-content .dname {
+                font-size: 15px;
+            }
+            .desc-panel .desc-content .dtext {
+                font-size: 12px;
+                line-height: 1.5;
+            }
+            .encyclopedia .card-grid .mini-card {
+                width: 70px;
+                font-size: 10px;
+                padding: 4px 3px;
+            }
+            .encyclopedia .card-grid .mini-card .mc-name {
+                font-size: 11px;
+            }
+            .modal-header h2 {
+                font-size: 16px;
+            }
+            .tooltip-text {
+                width: 220px;
+                font-size: 11px;
+                padding: 8px 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="app" id="app">
+        <!-- Header -->
+        <div class="header">
+            <h1>🃏 錦囊牌</h1>
+            <div class="header-controls">
+                <button class="primary" id="drawBtn">抽取錦囊牌</button>
+                <div class="mode-toggle">
+                    <button class="active" data-mode="repetitive">重複</button>
+                    <button data-mode="nonrepetitive">不重複</button>
+                </div>
+                <button class="info" id="encyclopediaBtn">📖 圖鑑</button>
+                <button class="danger" id="resetBtn">重置</button>
+                <span class="deck-info" id="deckInfo">牌堆餘: <span id="deckCount">0</span></span>
+            </div>
+        </div>
+
+        <!-- Description Panel -->
+        <div class="desc-panel" id="descPanel">
+            <div class="empty">點擊手牌中的卡牌查看說明</div>
+        </div>
+
+        <!-- Hand Area -->
+        <div class="hand-area">
+            <div class="hand-label">
+                <span>✋ 我的手牌</span>
+                <span class="count" id="handCount">0 張</span>
+            </div>
+            <div class="hand-cards empty" id="handContainer">
+                <span>尚無手牌，點擊「抽取錦囊牌」</span>
+            </div>
+        </div>
+
+        <!-- Discard Area -->
+        <div class="discard-area" id="discardArea">
+            <span class="discard-label">🗑 棄牌區</span>
+            <span class="discard-count" id="discardCount">0 張</span>
+            <span style="margin-left:12px;color:#556688;">將卡牌拖曳至此棄置</span>
+        </div>
+    </div>
+
+    <!-- Encyclopedia Modal -->
+    <div class="modal-overlay" id="encyclopediaModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📖 錦囊圖鑑</h2>
+                <button class="close-btn" id="closeEncyclopedia">✕</button>
+            </div>
+            <div class="modal-body" id="encyclopediaBody">
+                <!-- rendered by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip for special terms (global) -->
+    <div id="globalTooltip" style="display:none;position:fixed;background:#0f1a30;border:1px solid #2a3a6a;border-radius:10px;padding:10px 16px;font-size:13px;color:#dde;max-width:340px;z-index:9999;box-shadow:0 10px 40px rgba(0,0,0,0.6);line-height:1.6;pointer-events:none;"></div>
+
+    <script>
+        // ============================================================
+        //  DATA
+        // ============================================================
+        const CARD_DATA = [];
+
+        // Helper to add cards
+        function addCards(pack, cards, type = 'normal', versionNote = null) {
+            for (const c of cards) {
+                let name = c.name;
+                let desc = c.desc;
+                let specialTerms = c.specialTerms || [];
+                CARD_DATA.push({ name, pack, description: desc, type, versionNote, specialTerms });
+            }
+        }
+
+        // ---- 普通錦囊 ----
+        addCards('标准版', [
+            { name: '决斗', desc: '出牌阶段，对一名其他角色使用。由该角色开始，其与你轮流打出一张【杀】，然后首先未打出【杀】的角色受到另一名角色造成的1点伤害。' },
+            { name: '借刀杀人', desc: '出牌阶段，对一名装备区里有武器牌的其他角色使用。除非该角色对其攻击范围内，由你选择的另一名角色使用一张【杀】，否则其将其装备区里的武器牌交给你。' },
+            { name: '万箭齐发', desc: '出牌阶段，对所有其他角色使用。每名目标角色需打出一张【闪】，否则受到你造成的1点伤害。' },
+            { name: '南蛮入侵', desc: '出牌阶段，对所有其他角色使用。每名目标角色需打出一张【杀】，否则受到你造成的1点伤害。' },
+            { name: '过河拆桥', desc: '出牌阶段，对一名区域里有牌的其他角色使用。你弃置其区域里的一张牌。' },
+            { name: '顺手牵羊', desc: '出牌阶段，对一名区域里有牌的其他角色使用。你弃置其区域里的一张牌。' },
+            { name: '无中生有', desc: '出牌阶段，对你使用。你摸两张牌。' },
+            { name: '五谷丰登', desc: '出牌阶段，对所有角色使用。你亮出牌堆顶等同于目标角色数的牌，每名目标角色选择并获得其中的一张。' },
+            { name: '桃园结义', desc: '出牌阶段，对所有角色使用。每名目标角色回复1点体力。' },
+            { name: '无懈可击', desc: '当一张锦囊牌对一名角色生效前，抵消此牌对该角色的效果；或抵消另一张【无懈可击】的效果。' },
+        ]);
+
+        addCards('军争篇', [
+            { name: '火攻', desc: '出牌阶段，对一名有手牌的角色使用。目标角色展示一张手牌，然后你可以弃置一张与其展示牌花色相同的手牌，对其造成1点火焰伤害。' },
+            { name: '铁索连环', desc: '出牌阶段，对一至两名角色使用。目标角色横置或重置。\n重铸：出牌阶段，你可以将此牌置入弃牌堆，然后摸一张牌。' },
+        ]);
+
+        addCards('用间篇', [
+            { name: '刮骨疗毒', desc: '出牌阶段，对一名已受伤的角色使用。该角色回复1点体力，然后其可以弃置一张【毒】（以此法弃置【毒】无须失去体力）。' },
+            { name: '推心置腹', desc: '出牌阶段，对距离为1的一名其他角色使用。你获得目标角色区域里至多两张牌，然后交给其等量的手牌。' },
+            { name: '趁火打劫', desc: '出牌阶段，对一名其他角色使用。你展示其一张手牌并令其选择一项：1.将此牌交给你；2.受到你造成的1点伤害。' },
+            { name: '树上开花', desc: '出牌阶段，对你使用。你弃置至多两张牌，然后摸等量的牌。若你以此法弃置了装备牌，则多摸一张牌。' },
+        ]);
+
+        addCards('应变篇', [
+            { name: '洞烛先机', desc: '出牌阶段，对你使用。目标角色卜算2，然后摸两张牌。', specialTerms: [{ term: '卜算',
+                        explanation: '卜算X，即观看牌堆顶的X张牌，将其中任意张以任意顺序置于牌堆顶，其余以任意顺序置于牌堆底。' }] },
+            { name: '出其不意', desc: '出牌阶段，对一名有手牌的其他角色使用。你展示目标角色的一张手牌，若【出其不意】有花色且与此牌花色不同，你对其造成1点伤害。' },
+            { name: '逐近弃远', desc: '出牌阶段，对一名其他角色使用。若你与其的距离大于1，你弃置其区域里一张牌；若你与其的距离为1，你获得其区域里一张牌。' },
+            { name: '水淹七军', desc: '出牌阶段，对一名装备区里有牌的其他角色使用。目标角色选择一项：1.弃置装备区里的所有牌；2.你对其造成1点雷电伤害。' },
+            { name: '随机应变', desc: '此牌视为你本回合使用/打出的上一张基本牌或普通锦囊牌。' },
+        ]);
+
+        addCards('SP', [
+            { name: '笑里藏刀', desc: '出牌阶段，你令一名其他角色摸X张牌（X为其已损失的体力值且至多为5），然后你对其造成1点伤害。' },
+            { name: '美人计', desc: '出牌阶段，对一名有手牌的其他男性角色使用。每名女性角色各获得其一张手牌并将一张手牌交给你，然后比较你与其的手牌数，手牌少的角色对手牌多的角色造成1点伤害。' },
+            { name: '瞒天过海', desc: '出牌阶段，对一至两名区域里有牌的其他角色使用。你依次获得目标角色区域里的一张牌，然后依次交给目标角色一张牌。\n此牌不计入你的手牌上限。' },
+            { name: '调剂盐梅', desc: '出牌阶段，对两名手牌数不同的角色使用。手牌数较多的角色弃置一张牌，手牌数较少的角色摸一张牌。此牌结算结束后，若这两名角色手牌数相同，你可以将弃牌堆中以此法弃置的牌交给一名角色。\n重铸：出牌阶段，你可以将此牌置入弃牌堆，然后摸一张牌。' },
+            { name: '兵临城下', desc: '出牌阶段，对一名其他角色使用。你亮出牌堆顶的四张牌，然后依次对目标角色使用其中的【杀】，其余的牌置于牌堆顶。' },
+            { name: '奇正相生', desc: '出牌阶段，对一名其他角色使用。你为其指定正兵或奇兵，然后其可以打出一张【杀】或【闪】。若奇兵目标没有打出【杀】，你对其造成1点伤害；若正兵目标没有打出【闪】，你获得其一张牌。' },
+            { name: '水淹七军', desc: '出牌阶段，对至多两名角色使用。第一名角色受到1点雷电伤害并弃置一张牌，第二名角色受到1点雷电伤害并摸一张牌。' },
+            { name: '火球术', desc: '出牌阶段，对一名其他角色使用。你选择一项：1.对其造成1点火焰伤害；2.令其当前手牌中的伤害牌造成的伤害均改为火焰伤害。\n此牌不计入手牌上限' },
+            { name: '大火球术', desc: '出牌阶段，对一名角色使用。你令其当前手牌中的伤害牌造成的伤害均改为火焰伤害，然后对其造成1点火焰伤害。\n此牌不计入手牌上限' },
+        ]);
+
+        addCards('国战标准版', [
+            { name: '远交近攻', desc: '出牌阶段，对一名其他角色使用。该角色摸一张牌，然后你摸三张牌。' },
+            { name: '以逸待劳', desc: '出牌阶段，对你和任意名其他角色使用。每名目标角色各摸两张牌，然后弃置两张牌。' },
+            { name: '知己知彼', desc: '出牌阶段，对一名其他角色使用。你观看其手牌，然后摸一张牌。' },
+        ]);
+
+        addCards('势备篇', [
+            { name: '敕令', desc: '出牌阶段，对所有角色使用。你为每名目标角色各选择一项：1.展示所有手牌，摸一张牌；2.弃置一张装备牌；3.失去1点体力。\n重铸：出牌阶段，你可以将此牌置入弃牌堆，然后摸一张牌。' },
+            { name: '调虎离山', desc: '出牌阶段，对一至两名其他角色使用。目标角色于此回合内体力值不会改变，不计入距离和座次的计算，不能使用牌且不能成为牌的目标。' },
+            { name: '火烧连营', desc: '出牌阶段，对所有其他角色使用。目标角色依次受到你对其造成的1点火焰伤害。' },
+            { name: '联军盛宴', desc: '出牌阶段，你选择一个其他势力，对你和该势力的所有角色使用。该势力的每名目标角色各摸一张牌且重置其武将牌。然后你执行X次选择（X为该势力存活角色数）：1.回复1点体力；2.摸一张牌。',
+                versionNote: '虎牢关版本' },
+            { name: '联军盛宴', desc: '出牌阶段，对所有角色使用。你摸X张牌（X为存活角色数），其他目标角色各回复1点体力或摸一张牌。' },
+            { name: '勠力同心', desc: '出牌阶段，令任意已横置的角色各摸一张牌，或令任意角色各横置。\n重铸：出牌阶段，你可以将此牌置入弃牌堆，然后摸一张牌。' },
+            { name: '挟天子以令诸侯', desc: '出牌阶段，对你使用。你结束出牌阶段，然后若你于弃牌阶段结束时弃置一张手牌，则此回合结束时，你获得一个额外的回合。' },
+        ]);
+
+        addCards('斗地主标准版', [
+            { name: '进退自如', desc: '出牌阶段，选择一项：1.对所有其他角色使用，其需打出一张【杀】，否则受到你的1点伤害；2.对所有角色使用，亮出牌堆顶等量角色牌数的牌，各获得其中一张。' },
+            { name: '攻守兼备', desc: '出牌阶段，选择一项：1.对所有其他角色使用，其需打出一张【闪】，否则受到你的1点伤害；2.对所有角色使用，其各回复1点体力。' },
+            { name: '继往开来', desc: '出牌阶段，选择一项：1.对你使用，弃置所有手牌，然后摸等量的牌；2.对你使用，将所有手牌当任意普通锦囊牌使用。' },
+            { name: '财源滚滚', desc: '出牌阶段，对一名角色使用。目标角色摸四张牌。' },
+            { name: '炸弹', desc: '当一张牌对第一个目标生效前，对此牌使用，抵消此牌的效果。此牌不能被【无懈可击】响应。' },
+        ]);
+
+        addCards('文和乱武', [
+            { name: '斗转星移', desc: '出牌阶段，对一名体力值大于你的角色使用。目标角色失去1点体力，你回复1点体力。' },
+            { name: '偷梁换柱', desc: '出牌阶段，对一名装备区牌数大于你的角色使用。其将装备区里的X张牌置入你的装备区（X为你与其装备区牌数之差的一半，向上取整）。' },
+            { name: '李代桃僵', desc: '出牌阶段，对一名手牌数大于你的角色使用，其将X张手牌交给你（X为你与其手牌数之差的一半，向上取整）。' },
+            { name: '文和乱武', desc: '出牌阶段，对所有其他角色使用。目标角色依次选择一项：1.对其最近的另一名角色使用一张【杀】；2.失去1点体力。' },
+        ]);
+
+        addCards('文和乱武·战备', [
+            { name: '强兵足食', desc: '出牌阶段，对你使用。你获得5枚粮草。', specialTerms: [{ term: '粮草',
+                        explanation: '出牌阶段开始时，你可以花费「粮草」从弃牌堆获得对应卡牌。基本牌需2枚「粮草」，非基本牌需3枚「粮草」。' }] },
+            { name: '强易', desc: '出牌阶段，对一名有手牌的其他角色使用。你交其一张牌并观看其手牌，然后你选择一项：1.获得其中一张牌；2.获得其装备区内的一张牌。', versionNote: '版本1' },
+            { name: '强易', desc: '出牌階段，你對一名有手牌的其他角色使用。你獲得目標角色的兩張手牌，然後你交給其兩張手牌。', versionNote: '版本2' },
+        ]);
+
+        addCards('忠胆英杰', [
+            { name: '声东击西', desc: '出牌阶段，对距离为1的一名其他角色使用。你交给该角色一张手牌并选择除其外的一名其他角色，然后目标角色将两张牌交给该角色。\n若存活角色数不大于2，你可以重铸此牌。' },
+            { name: '增兵减灶', desc: '出牌阶段，对一名角色使用。目标角色摸三张牌，然后选择一项：1.弃置一张非基本牌；2.弃置两张牌。' },
+            { name: '弃甲曳兵', desc: '出牌阶段，对一名装备区有牌的其他角色使用。目标角色展示所有手牌，然后选择一项：1.弃置所有武器牌和进攻坐骑牌；2.弃置所有防具牌和防御坐骑牌。' },
+            { name: '金蝉脱壳', desc: '当你成为其他角色使用基本牌或锦囊牌的目标后，若你的所有手牌均为【金蝉脱壳】，你展示所有手牌，然后对该牌使用。目标牌对你无效，你摸两张牌。\n当你因弃置而失去一张【金蝉脱壳】时，你摸一张牌。' },
+        ]);
+
+        addCards('三国杀·幻', [
+            { name: '撒豆成兵', desc: '出牌阶段，对你使用。你从武将牌堆获得一张新的副将。' },
+        ]);
+
+        addCards('风花雪月', [
+            { name: '花言巧语', desc: '出牌阶段，对一名有手牌的角色使用。 你令目标回复一点体力，然后目标角色须给你你一张手牌。' },
+            { name: '始乱终弃', desc: '出牌阶段，对一名使你回复过体力或给予过你牌的角色使用。 你对目标角色造成2点伤害。' },
+        ]);
+
+        addCards('山河煮酒·龙起襄樊', [
+            { name: '整甲缮兵', desc: '出牌阶段，你选择一项：1.对至多两名角色使用。目标角色各摸一张牌；2.对一名其他角色使用。本回合你与目标角色的距离视为1。' },
+        ]);
+
+        addCards('山河煮酒·龙起襄樊-关索传', [
+            { name: '以毒攻毒', desc: '出牌阶段，对一名已受伤的角色使用。你观看目标角色的手牌，若你与其手牌中均有【杀】，则你弃置其中一张【杀】并与其各摸两张牌，否则你与其各受到1点无来源伤害。' },
+        ]);
+
+        addCards('山河煮酒·绝代智将', [
+            { name: '玉石皆碎', desc: '出牌阶段，对一名角色使用。你对目标角色造成1点伤害，然后你失去1点体力。' },
+        ]);
+
+        addCards('山河煮酒·桃园挽歌', [
+            { name: '火烧连营', desc: '出牌阶段，对一名有牌的角色使用。你展示目标角色的一张牌，然后你可以弃置一张与展示的牌花色相同的手牌。若如此做，你弃置被展示的牌并对其造成1点火焰伤害，若其受到此伤害时已横置，此【火烧连营】结算结束后，你获得之。' },
+        ]);
+
+        addCards('天降神兵', [
+            { name: '唯我独尊', desc: '出牌阶段，若你没有"战神印记"，对你使用。目标角色获得"战神印记"。', specialTerms: [{ term: '战神印记',
+                        explanation: '有戰神印記的角色使用【殺】無次數限制；回合結束時，若你於此回合內使用過至少兩張【殺】，你將戰神印記移給你的下家' }] },
+        ]);
+
+        addCards('神武再世', [
+            { name: '移花接木', desc: '出牌阶段，对一名有牌的其他角色使用。目标角色选择一项：1.使用一张【杀】；2.交给你两张牌。' },
+            { name: '故步自封', desc: '出牌阶段，对一名其他角色使用。目标角色的随机一个技能失效，直到该角色的下回合结束。' },
+            { name: '撒豆成兵', desc: '出牌階段，對你使用。若你的勢力：為神，你摸X張牌；不為神，你將手牌摸至X張（X為你的體力上限且最多為5）。' },
+        ]);
+
+        addCards('逐鹿天下', [
+            { name: '解甲归田', desc: '出牌阶段，对一名装备区里有牌的角色使用。目标角色获得其装备区里的所有牌。' },
+            { name: '逐鹿天下', desc: '出牌阶段，对所有角色使用。从牌堆和弃牌堆中亮出等同于目标角色数的装备牌，目标角色将其中一张置于其装备区里。' },
+            { name: '草船借箭', desc: '当【杀】或伤害类锦囊牌对你生效前，对此牌使用。抵消此牌对你的效果，然后此牌结算结束后，你获得之。' },
+        ]);
+
+        addCards('龙舟争渡', [
+            { name: '同舟共济', desc: '出牌阶段，对所有与你势力相同的角色使用。目标角色各摸一张牌。' },
+            { name: '力争上游', desc: '出牌阶段，对所有角色使用。与你势力相同的角色各摸X张牌（X为势力数），其他目标各摸一张牌。' },
+            { name: '逆水行舟', desc: '出牌阶段，对一名与你势力不同的角色使用。你对与其势力相同的所有角色各造成1点伤害。' },
+            { name: '粽子', desc: '出牌阶段，对你使用。你摸五张牌。若为本回合首次使用，本回合内你使用杀次数+1。' },
+        ]);
+
+        addCards('官渡之战', [
+            { name: '屯粮', desc: '出牌阶段，对至多三名角色使用。目标角色各摸一张牌。' },
+            { name: '援军', desc: '出牌阶段，对至多两名已受伤的角色使用。目标角色各回复1点体力。' },
+        ]);
+
+        addCards('幻化之战', [
+            { name: '釜底抽薪', desc: '出牌阶段，对一名其他角色使用。目标角色随机失去一个技能。' },
+            { name: '偷梁换柱', desc: '出牌阶段，对一名装备区牌数大于你的角色使用。其将装备区里的X张牌置入你的装备区（X为你与其装备区牌数之差的一半，向上取整）。' },
+            { name: '爆竹', desc: '出牌阶段，对一名其他角色使用。目标角色受到3点火焰伤害。' },
+        ]);
+
+        addCards('神之试炼', [
+            { name: '洪荒之力', desc: '出牌阶段，对一名其他角色使用。该角色翻面。' },
+        ]);
+
+        addCards('合纵抗秦', [
+            { name: '商鞅变法', desc: '出牌阶段，对一名其他角色使用。你对目标角色造成随机1-2点伤害，且当其以此法进入濒死状态时，你判定，若为黑色，除其外的角色不能对其使用【桃】，直到濒死结算结束。' },
+        ]);
+
+        addCards('年兽大作战', [
+            { name: '春联', desc: '出牌阶段，对你使用。 目标角色从弃牌堆中获得两张相同牌名且不为【春联】的牌。' },
+            { name: '爆竹', desc: '出牌阶段限一次，对你使用。直到你的下回合开始，你不能成为其他角色使用牌的目标，防止其他角色对你造成的伤害。\n此牌不可被【无懈可击】响应或增加目标。', versionNote: '2019版本' },
+            { name: '爆竹', desc: '出牌阶段，对一名角色使用。目标角色80%几率翻面，80%几率失去1点体力。\n重铸：出牌阶段，你可以将此牌置入弃牌堆，然后摸一张牌。', versionNote: '2020版本' },
+            { name: '爆竹', desc: '出牌阶段，对一名其他角色使用。目标角色受到1点火焰伤害并随机弃置一张牌。\n重铸：出牌阶段，你可以将此牌置入弃牌堆，然后摸一张牌。' },
+            { name: '祥符聚宝', desc: '出牌阶段，对任意名角色使用。你从牌堆亮出角色数的牌，随机分配给每名目标角色其中的一张。' },
+        ]);
+
+        addCards('十殿阎罗', [
+            { name: '回魂', desc: '出牌阶段，对所有角色使用。若目标角色失去过技能，其获得该技能。若目标角色有技能失效，其该技能重新生效。' },
+        ]);
+
+        addCards('兵临城下', [
+            { name: '白衣渡江', desc: '出牌阶段，对一名角色使用。你令目标角色将手牌摸至与手牌最多的角色相同，或令其将手牌弃置至与手牌最少的角色相同。' },
+            { name: '落井下石', desc: '出牌阶段，对所有其他已受伤的角色使用。你对目标角色各造成1点伤害。' },
+        ]);
+
+        addCards('开黑妙妙杀', [
+            { name: '劝酒', desc: '出牌阶段，对所有角色使用。每名目标角色需使用一张【酒】或点数为9的牌，否则失去1点体力。' },
+            { name: '你死我活', desc: '出牌阶段使用。所有其他角色轮流选择一项，直到有角色死亡：1.对距离最近的另一名角色使用【杀】；2.失去1点体力。' },
+            { name: '两肋插刀', desc: '出牌阶段使用。所有角色将受到的伤害和体力流失转移给队友。' },
+            { name: '天雷', desc: '出牌阶段使用。所有角色将游戏外的一张【闪电】置入判定区。' },
+            { name: '有难同当', desc: '出牌阶段使用。所有角色横置。' },
+            { name: '鹰狼', desc: '出牌阶段使用。当一名角色本轮使用牌指定除其外的角色为目标后，其获得一名目标角色的一张牌。' },
+            { name: '武圣归来', desc: '出牌阶段使用。你选择一名已死亡的角色复活（体力值为1，起始手牌数为3）。' },
+            { name: '义父', desc: '出牌阶段使用。你成为"义父"。当你因使用将此牌置于弃牌堆时，所有其他角色争夺将手拍于牌上。最迟拍的角色成为"义子"，"义子"的准备阶段须交给"义父"一张牌。' },
+            { name: '躺赢', desc: '出牌阶段使用。你结束当前回合，翻面并选择一名角色操控你直至你下回合开始。选择角色下回合开始时，其选择执行一个额外的摸牌或出牌阶段。' },
+            { name: '有福同享', desc: '出牌阶段使用。你此阶段对自己使用基本牌或普通锦囊牌可以多指定任意名角色为目标。' },
+            { name: '烈火', desc: '出牌阶段使用。所有角色秘密选择一张手牌。若有其他角色与你选择的牌颜色相同，你弃置你选择的牌，对这些其他角色各造成1点火焰伤害。' },
+            { name: '神兵', desc: '出牌阶段使用。你选择一项：1.令所有角色依次弃置装备区里的所有牌；2.令所有角色依次使用牌堆中不同副类别的装备牌各一张。' },
+            { name: '大师', desc: '出牌阶段使用。你令两名其他角色交换手牌。' },
+            { name: '富贵', desc: '出牌阶段使用。你选择一名角色。改角色下次获得手牌后，你摸等量的牌。' },
+            { name: '金铙', desc: '出牌阶段使用。你与队友各获得1枚"金"（当你受到伤害时，你弃1枚"金"，防止此伤害）。' },
+        ]);
+
+        addCards('开黑季活动限定', [
+            { name: '生死与共', desc: '当一名其他角色进入濒死状态时，对其使用。其回复2点体力；当其死亡后，你死亡。' },
+            { name: '红运当头', desc: '出牌阶段，对你和一名有手牌的其他角色使用。每名目标角色弃置至多两张牌，然后从牌堆或弃牌堆中获得等量的红桃牌。' },
+            { name: '落井下石', desc: '当一名其他角色进入濒死状态时，对其使用。终止其濒死结算，你摸一张牌。' },
+            { name: '雷公助我', desc: '出牌阶段，对所有角色使用。每名角色进行一次【闪电】判定，然后你摸X张牌（X为因此受到伤害的角色数）。' },
+            { name: '两肋插刀', desc: '出牌阶段，对一名其他角色使用。目标角色获得两张伤害牌。' },
+            { name: '兄弟齐心', desc: '出牌阶段，对一名其他角色使用。目标角色重新分配你与其的手牌，然后你与其之中手牌较少的角色摸一张牌。' },
+            { name: '无天无界', desc: '出牌阶段，对你使用。你从三个可造成伤害的技能中选择一个获得，直到你的下回合开始。' },
+        ]);
+
+        addCards('创玩节活动限定', [
+            { name: '见好就收', desc: '出牌阶段，对你使用。你亮出牌堆顶的一张牌，然后猜测牌堆顶的下一张牌点数大于或小于此牌并亮出之。若猜对，你选择一项：1.获得所有亮出的牌；2.重复猜测流程。' },
+            { name: '望梅止渴', desc: '出牌阶段，对一名角色使用。直到其回合结束，其手牌中的梅花牌均视为【桃】。' },
+            { name: '至死方休', desc: '出牌阶段，对你使用。你将体力上限减至1点，然后可以视为使用至多X张火【杀】（X为你因此减少的体力上限且至多为9）。' },
+            { name: '清算', desc: '出牌阶段，对你使用。你选择一名对你造成过伤害的角色，对其造成0-2点随机伤害。' },
+            { name: '火上浇油', desc: '出牌阶段，对所有角色使用。目标角色依次展示手牌中所有的伤害牌，这些牌造成的伤害+1。' },
+            { name: '好运', desc: '出牌阶段，对你使用。你选择一种颜色，然后进行判定，若结果为你选择的颜色，则你重复此流程，否则你获得此前所有的判定牌。' },
+        ]);
+
+        addCards('国际服限定', [
+            { name: '雷劫', desc: '出牌阶段，对你使用。你选择展示并获得牌堆顶X张牌，其中每有一张黑桃2～9，你受到3点雷电伤害。 X至少为1，至多为5。' },
+            { name: '抛砖引玉', desc: '出牌阶段，对一名其他角色使用。你交给其一张手牌，然后随机获得其两张牌。' },
+        ]);
+
+        addCards('太虚幻境', [
+            { name: '水淹七军', desc: '出牌阶段，对一名其他角色使用。目标角色选择一项：1.弃置点数之和不小于6的装备牌；2.你对其造成1点雷电伤害。' },
+            { name: '调虎离山', desc: '出牌阶段，对一名其他角色使用。目标角色翻面，然后你与其各摸一张牌。' },
+            { name: '火烧连营', desc: '出牌阶段，对你的下家使用。目标角色受到1点火焰伤害。若其下家与其同阵营，其下家受到1点火焰伤害，然后重复此流程。' },
+            { name: '草木皆兵', desc: '出牌阶段，对一名其他角色使用。目标角色弃置一张牌，与其距离为1的角色各摸一张牌。' },
+        ]);
+
+        // ---- 延时锦囊 ----
+        addCards('标准版', [
+            { name: '乐不思蜀', desc: '出牌阶段，对一名其他角色使用。将【乐不思蜀】置入该角色的判定区，若判定结果不为红桃，其跳过本回合的出牌阶段。' },
+            { name: '乐不思蜀', desc: '出牌阶段，对一名其他角色使用。将【乐不思蜀】置入该角色的判定区，若判定结果不为红桃，其跳过本回合的出牌阶段且本回合手牌上限为3。',
+                versionNote: '三国杀·幻版本' },
+            { name: '闪电', desc: '出牌阶段，对你使用。将【闪电】置入你的判定区。若判定结果为黑桃2-9，则目标角色受到3点雷电伤害，否则将之置入其下家的判定区。' },
+        ], 'delay');
+
+        addCards('军争篇', [
+            { name: '兵粮寸断', desc: '出牌阶段，对距离为1的一名其他角色使用。将【兵粮寸断】置入该角色的判定区，若判定结果不为梅花，其跳过本回合的摸牌阶段。' },
+            { name: '兵粮寸断', desc: '出牌阶段，对距离为1的一名其他角色使用。将【兵粮寸断】置入该角色的判定区，若判定结果不为梅花，其于摸牌阶段少摸一张牌，除其外的角色摸一张牌。',
+                versionNote: '血战长坂坡版本' },
+        ], 'delay');
+
+        addCards('忠胆英杰', [
+            { name: '草木皆兵', desc: '出牌阶段，对一名其他角色使用。将【草木皆兵】置入该角色的判定区，若判定结果不为梅花，摸牌阶段，目标角色少摸一张牌；摸牌阶段结束时，与其距离为1的角色各摸一张牌。' },
+            { name: '浮雷', desc: '出牌阶段，对你使用。将【浮雷】置入你的判定区。若判定结果为黑桃，则目标角色受到X点雷电伤害（X为此【浮雷】判定结果为黑桃的次数）。判定完成后，将之置入其下家的判定区。' },
+        ], 'delay');
+
+        addCards('风花雪月', [
+            { name: '毁容', desc: '出牌阶段，对一名其他角色使用。 将【毁容】置入该角色的判定区，若判定结果不为红桃，其本回合于出牌阶段获得牌时，弃置之，且此牌保留在其判定区。' },
+        ], 'delay');
+
+        addCards('山河煮酒·桃园挽歌', [
+            { name: '随波逐流', desc: '出牌阶段，对你使用。将【随波逐流】置入你的判定区。若判定结果为方块，目标角色将装备区里的一张牌移动至其下家的装备区里（若目标角色的装备区里有坐骑牌，则须选择其中一张），若无法移动则改为其下家获得此装备牌。判定结束后，将之置入其下家的判定区。' },
+        ], 'delay');
+
+        addCards('兵临城下', [
+            { name: '兵临城下', desc: '出牌阶段，对一名其他角色使用。将【兵临城下】置入该角色的判定区，若判定结果不为方块，其选择弃置装备区里的所有牌或受到1点伤害。' },
+        ], 'delay');
+
+        // ---- 势力锦囊 ----
+        addCards('不臣篇', [
+            { name: '号令天下', desc: '出牌阶段，对体力值不是最少的一名角色使用。所有除其外的角色可以选择一项：1.弃置一张手牌，视为对其使用一张【杀】；2.弃置其一张牌。\n魏：魏势力角色选择1时无需弃置牌，选择2时可以获得弃置的牌。' },
+            { name: '克复中原', desc: '出牌阶段，对任意名角色使用。目标角色依次选择一项：1.视为使用一张【杀】；2.摸一张牌。\n蜀：蜀势力角色选择1时【杀】伤害+1，选择2时改为摸两张牌。' },
+            { name: '固国安邦', desc: '出牌阶段，对你使用。目标角色摸八张牌，然后弃置至少六张手牌。\n吴：你可以将以此法弃置的牌交给吴势力角色，每名角色至多两张。' },
+            { name: '文和乱武', desc: '出牌阶段，对所有角色使用。目标角色依次展示手牌，你选择一项：1.令其弃置两张类别各不同的手牌；2.你弃置其中一张牌。\n群：群势力角色执行效果后若没有手牌，则将手牌摸至体力值。' },
+        ], 'force');
+
+        // Mark all delay and force cards in the data
+        // We already added them with type 'delay' or 'force'
+
+        // ============================================================
+        //  STATE
+        // ============================================================
+        let allCards = [...CARD_DATA];
+        let deck = [];
+        let hand = [];
+        let discarded = [];
+        let selectedCardIndex = -1;
+        let mode = 'repetitive'; // 'repetitive' | 'nonrepetitive'
+        let drawnHistory = new Set(); // for non-repetitive: track card indices (by id)
+
+        // We'll assign a unique id to each card entry for tracking
+        let cardIdCounter = 0;
+        allCards.forEach(c => { c.id = cardIdCounter++; });
+
+        // ============================================================
+        //  DOM REFS
+        // ============================================================
+        const drawBtn = document.getElementById('drawBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const encyclopediaBtn = document.getElementById('encyclopediaBtn');
+        const deckCountEl = document.getElementById('deckCount');
+        const handContainer = document.getElementById('handContainer');
+        const handCountEl = document.getElementById('handCount');
+        const discardCountEl = document.getElementById('discardCount');
+        const descPanel = document.getElementById('descPanel');
+        const modalOverlay = document.getElementById('encyclopediaModal');
+        const encyclopediaBody = document.getElementById('encyclopediaBody');
+        const closeEncyclopediaBtn = document.getElementById('closeEncyclopedia');
+        const discardArea = document.getElementById('discardArea');
+        const modeBtns = document.querySelectorAll('.mode-toggle button');
+
+        // ============================================================
+        //  FUNCTIONS
+        // ============================================================
+
+        function resetDeck() {
+            if (mode === 'nonrepetitive') {
+                // rebuild deck from all cards, excluding those in hand and discarded
+                const usedIds = new Set();
+                hand.forEach(c => usedIds.add(c.id));
+                discarded.forEach(c => usedIds.add(c.id));
+                deck = allCards.filter(c => !usedIds.has(c.id));
+                drawnHistory = new Set(usedIds);
+            } else {
+                // repetitive: full deck
+                deck = [...allCards];
+                drawnHistory = new Set();
+            }
+            shuffleDeck();
+            updateUI();
+        }
+
+        function shuffleDeck() {
+            for (let i = deck.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [deck[i], deck[j]] = [deck[j], deck[i]];
+            }
+        }
+
+        function drawCard() {
+            if (mode === 'nonrepetitive') {
+                // check if all cards are drawn
+                if (deck.length === 0) {
+                    alert('牌堆已空！所有錦囊牌都已抽完。');
+                    return;
+                }
+                if (deck.length === 0) {
+                    alert('牌堆已空！');
+                    return;
+                }
+                // draw from deck
+                const card = deck.pop();
+                hand.push(card);
+                drawnHistory.add(card.id);
+                // remove from deck if it's there (it should be)
+                deck = deck.filter(c => c.id !== card.id);
+                updateUI();
+                // show description
+                showDescription(card);
+                // select the new card
+                selectCard(hand.length - 1);
+                return;
+            } else {
+                // repetitive mode: draw random from all cards
+                if (allCards.length === 0) return;
+                const idx = Math.floor(Math.random() * allCards.length);
+                const card = { ...allCards[idx] }; // copy
+                hand.push(card);
+                updateUI();
+                showDescription(card);
+                selectCard(hand.length - 1);
+            }
+        }
+
+        function selectCard(index) {
+            if (index < 0 || index >= hand.length) {
+                selectedCardIndex = -1;
+                renderHand();
+                return;
+            }
+            selectedCardIndex = index;
+            renderHand();
+            const card = hand[index];
+            showDescription(card);
+        }
+
+        function showDescription(card) {
+            if (!card) {
+                descPanel.innerHTML = `<div class="empty">點擊手牌中的卡牌查看說明</div>`;
+                return;
+            }
+            let typeLabel = '';
+            if (card.type === 'delay') typeLabel = '⏳ 延時錦囊 ';
+            else if (card.type === 'force') typeLabel = '⚔ 勢力錦囊 ';
+            else typeLabel = '🃏 普通錦囊 ';
+
+            let versionStr = card.versionNote ? ` (${card.versionNote})` : '';
+
+            let descHtml = card.description;
+            // highlight special terms
+            if (card.specialTerms && card.specialTerms.length > 0) {
+                for (const st of card.specialTerms) {
+                    const regex = new RegExp(st.term, 'g');
+                    descHtml = descHtml.replace(regex, `<span class="special-term" data-term="${st.term}" data-explanation="${st.explanation}">${st.term}</span>`);
+                }
+            }
+
+            descPanel.innerHTML = `
+                <div class="desc-content">
+                    <div>
+                        <span class="dname">${card.name}</span>
+                        <span class="dpack">${typeLabel}· ${card.pack}${versionStr}</span>
+                    </div>
+                    <div class="dtext">${descHtml.replace(/\n/g, '<br>')}</div>
+                </div>
+            `;
+            // attach tooltip events for special terms
+            document.querySelectorAll('.desc-content .special-term').forEach(el => {
+                const term = el.dataset.term;
+                const expl = el.dataset.explanation;
+                el.addEventListener('mouseenter', (e) => {
+                    showTooltip(e, term, expl);
+                });
+                el.addEventListener('mouseleave', hideTooltip);
+                el.addEventListener('click', (e) => {
+                    showTooltip(e, term, expl);
+                    setTimeout(hideTooltip, 3000);
+                });
+                // touch support for tooltip
+                el.addEventListener('touchstart', (e) => {
+                    showTooltip(e, term, expl);
+                });
+                el.addEventListener('touchend', (e) => {
+                    setTimeout(hideTooltip, 3000);
+                });
+            });
+        }
+
+        function renderHand() {
+            if (hand.length === 0) {
+                handContainer.innerHTML = `<span style="color:#445566;font-size:16px;letter-spacing:1px;">尚無手牌，點擊「抽取錦囊牌」</span>`;
+                handContainer.classList.add('empty');
+                handCountEl.textContent = '0 張';
+                return;
+            }
+            handContainer.classList.remove('empty');
+            let html = '';
+            hand.forEach((card, idx) => {
+                const isSelected = (idx === selectedCardIndex);
+                let classes = 'card';
+                if (card.type === 'delay') classes += ' delay';
+                if (card.type === 'force') classes += ' force';
+                if (isSelected) classes += ' selected';
+                let versionStr = card.versionNote ? ` <span class="card-version">${card.versionNote}</span>` : '';
+                html += `
+                    <div class="${classes}" data-index="${idx}" draggable="true">
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-pack">${card.pack}${versionStr}</div>
+                    </div>
+                `;
+            });
+            handContainer.innerHTML = html;
+            handCountEl.textContent = `${hand.length} 張`;
+
+            // attach events
+            document.querySelectorAll('.hand-cards .card').forEach(el => {
+                const idx = parseInt(el.dataset.index);
+                // click/tap to select (desktop and mobile)
+                el.addEventListener('click', (e) => {
+                    // if currently dragging, ignore
+                    if (isDragging) return;
+                    if (selectedCardIndex === idx) {
+                        selectCard(-1);
+                    } else {
+                        selectCard(idx);
+                    }
+                });
+                // desktop drag
+                el.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('text/plain', String(idx));
+                    e.dataTransfer.effectAllowed = 'move';
+                    el.style.opacity = '0.5';
+                });
+                el.addEventListener('dragend', (e) => {
+                    el.style.opacity = '1';
+                });
+                // mobile touch drag - new implementation
+                el.addEventListener('touchstart', handleTouchStart, { passive: true });
+                el.addEventListener('touchmove', handleTouchMove, { passive: false });
+                el.addEventListener('touchend', handleTouchEnd, { passive: true });
+                el.addEventListener('touchcancel', handleTouchEnd, { passive: true });
+            });
+        }
+
+        // ============================================================
+        //  TOUCH DRAG LOGIC (mobile) - improved
+        // ============================================================
+        let dragState = {
+            index: -1,
+            element: null,
+            clone: null,
+            startX: 0,
+            startY: 0,
+            offsetX: 0,
+            offsetY: 0,
+            isDragging: false, // set to true after threshold
+            discardRect: null,
+            moved: false,
+        };
+        let isDragging = false; // global flag
+
+        const DRAG_THRESHOLD = 10; // pixels
+
+        function handleTouchStart(e) {
+            const touch = e.touches[0];
+            const el = e.currentTarget;
+            const idx = parseInt(el.dataset.index);
+
+            // store initial data
+            const rect = el.getBoundingClientRect();
+            dragState.index = idx;
+            dragState.element = el;
+            dragState.startX = touch.clientX;
+            dragState.startY = touch.clientY;
+            dragState.offsetX = touch.clientX - rect.left;
+            dragState.offsetY = touch.clientY - rect.top;
+            dragState.isDragging = false;
+            dragState.moved = false;
+            dragState.clone = null;
+
+            // store discard rect
+            const discardRect = discardArea.getBoundingClientRect();
+            dragState.discardRect = discardRect;
+        }
+
+        function handleTouchMove(e) {
+            const touch = e.touches[0];
+            const el = dragState.element;
+            if (!el) return;
+
+            // if not yet dragging, check threshold
+            if (!dragState.isDragging) {
+                const dx = touch.clientX - dragState.startX;
+                const dy = touch.clientY - dragState.startY;
+                if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) {
+                    // not enough movement, do nothing
+                    return;
+                }
+                // threshold crossed: start drag
+                dragState.isDragging = true;
+                isDragging = true;
+                dragState.moved = true;
+
+                // create clone
+                const rect = el.getBoundingClientRect();
+                const clone = el.cloneNode(true);
+                clone.classList.add('card-dragging');
+                clone.style.width = rect.width + 'px';
+                clone.style.height = rect.height + 'px';
+                clone.style.position = 'fixed';
+                clone.style.left = (touch.clientX - dragState.offsetX) + 'px';
+                clone.style.top = (touch.clientY - dragState.offsetY) + 'px';
+                clone.style.pointerEvents = 'none';
+                clone.style.zIndex = 999;
+                document.body.appendChild(clone);
+                dragState.clone = clone;
+
+                // add class to original
+                el.classList.add('card-dragging-original');
+
+                // prevent default to stop scrolling
+                e.preventDefault();
+            } else {
+                // already dragging: update clone position
+                if (dragState.clone) {
+                    const newX = touch.clientX - dragState.offsetX;
+                    const newY = touch.clientY - dragState.offsetY;
+                    dragState.clone.style.left = newX + 'px';
+                    dragState.clone.style.top = newY + 'px';
+
+                    // check over discard
+                    const discardRect = dragState.discardRect;
+                    if (discardRect) {
+                        const cx = touch.clientX;
+                        const cy = touch.clientY;
+                        const isOver = (cx >= discardRect.left && cx <= discardRect.right &&
+                                        cy >= discardRect.top && cy <= discardRect.bottom);
+                        discardArea.classList.toggle('drag-over', isOver);
+                    }
+                }
+                e.preventDefault(); // prevent scrolling while dragging
+            }
+        }
+
+        function handleTouchEnd(e) {
+            // if we were dragging, check if over discard
+            const wasDragging = dragState.isDragging;
+            let discard = false;
+            if (wasDragging && dragState.clone) {
+                // get final touch position
+                const touch = e.changedTouches[0];
+                const rect = dragState.discardRect;
+                if (rect) {
+                    if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+                        touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+                        discard = true;
+                    }
+                }
+            }
+
+            // cleanup clone
+            if (dragState.clone && dragState.clone.parentNode) {
+                dragState.clone.parentNode.removeChild(dragState.clone);
+            }
+            if (dragState.element) {
+                dragState.element.classList.remove('card-dragging-original');
+            }
+            discardArea.classList.remove('drag-over');
+
+            // if discarded, remove card
+            if (discard && dragState.index >= 0 && dragState.index < hand.length) {
+                discardCard(dragState.index);
+            }
+
+            // reset drag state
+            dragState.isDragging = false;
+            isDragging = false;
+            dragState.clone = null;
+            dragState.element = null;
+            dragState.index = -1;
+        }
+
+        // ============================================================
+        //  UPDATE UI
+        // ============================================================
+        function updateUI() {
+            deckCountEl.textContent = deck.length;
+            renderHand();
+            discardCountEl.textContent = `${discarded.length} 張`;
+            // update mode buttons
+            modeBtns.forEach(btn => {
+                const m = btn.dataset.mode;
+                btn.classList.toggle('active', m === mode);
+            });
+        }
+
+        // ---- discard ----
+        function discardCard(index) {
+            if (index < 0 || index >= hand.length) return;
+            const card = hand[index];
+            hand.splice(index, 1);
+            discarded.push(card);
+            if (mode === 'nonrepetitive') {
+                drawnHistory.add(card.id);
+                // remove from deck if present
+                deck = deck.filter(c => c.id !== card.id);
+            }
+            if (selectedCardIndex === index) selectedCardIndex = -1;
+            else if (selectedCardIndex > index) selectedCardIndex--;
+            updateUI();
+            if (hand.length === 0) {
+                descPanel.innerHTML = `<div class="empty">點擊手牌中的卡牌查看說明</div>`;
+            } else if (selectedCardIndex >= 0 && selectedCardIndex < hand.length) {
+                showDescription(hand[selectedCardIndex]);
+            } else {
+                selectCard(0);
+            }
+        }
+
+        // ---- tooltip ----
+        let tooltipTimer = null;
+
+        function showTooltip(e, term, explanation) {
+            const el = document.getElementById('globalTooltip');
+            el.textContent = `「${term}」：${explanation}`;
+            el.style.display = 'block';
+            const rect = e.target.getBoundingClientRect();
+            let left = rect.left + rect.width / 2 - el.offsetWidth / 2;
+            let top = rect.top - el.offsetHeight - 10;
+            if (top < 10) top = rect.bottom + 10;
+            if (left < 10) left = 10;
+            if (left + el.offsetWidth > window.innerWidth - 10) left = window.innerWidth - el.offsetWidth - 10;
+            el.style.left = left + 'px';
+            el.style.top = top + 'px';
+            clearTimeout(tooltipTimer);
+        }
+
+        function hideTooltip() {
+            tooltipTimer = setTimeout(() => {
+                document.getElementById('globalTooltip').style.display = 'none';
+            }, 150);
+        }
+
+        // ---- encyclopedia ----
+        function renderEncyclopedia() {
+            const types = [
+                { key: 'normal', label: '普通錦囊牌', icon: '🃏' },
+                { key: 'delay', label: '延時錦囊牌', icon: '⏳' },
+                { key: 'force', label: '勢力錦囊', icon: '⚔' },
+            ];
+            let html = '<div class="encyclopedia">';
+            for (const t of types) {
+                const cardsOfType = allCards.filter(c => c.type === t.key);
+                if (cardsOfType.length === 0) continue;
+                // group by pack
+                const packMap = {};
+                for (const c of cardsOfType) {
+                    const key = c.pack + (c.versionNote ? '|' + c.versionNote : '');
+                    if (!packMap[key]) packMap[key] = [];
+                    packMap[key].push(c);
+                }
+                html += `<div class="type-group"><h3>${t.icon} ${t.label} (${cardsOfType.length})</h3>`;
+                for (const [packKey, cards] of Object.entries(packMap)) {
+                    const [packName, version] = packKey.split('|');
+                    let versionStr = version ? ` (${version})` : '';
+                    html += `<div class="pack-group"><h4>📦 ${packName}${versionStr}</h4><div class="card-grid">`;
+                    for (const c of cards) {
+                        let cls = 'mini-card';
+                        if (c.type === 'delay') cls += ' delay-mini';
+                        if (c.type === 'force') cls += ' force-mini';
+                        html += `
+                            <div class="${cls}" data-id="${c.id}">
+                                <div class="mc-name">${c.name}</div>
+                                <div class="mc-pack">${c.pack}</div>
+                            </div>
+                        `;
+                    }
+                    html += '</div></div>';
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+            encyclopediaBody.innerHTML = html;
+
+            // attach click to show description
+            document.querySelectorAll('.encyclopedia .mini-card').forEach(el => {
+                el.addEventListener('click', () => {
+                    const id = parseInt(el.dataset.id);
+                    const card = allCards.find(c => c.id === id);
+                    if (card) {
+                        showDescription(card);
+                        modalOverlay.classList.remove('active');
+                        // if card is in hand, select it; else just show desc
+                        const idx = hand.findIndex(c => c.id === id);
+                        if (idx >= 0) selectCard(idx);
+                        else {
+                            // show description but don't select
+                            // but we already showed it
+                        }
+                    }
+                });
+            });
+        }
+
+        // ---- mode switch ----
+        function switchMode(newMode) {
+            if (newMode === mode) return;
+            mode = newMode;
+            // reset everything
+            hand = [];
+            discarded = [];
+            selectedCardIndex = -1;
+            deck = [];
+            drawnHistory = new Set();
+            descPanel.innerHTML = `<div class="empty">點擊手牌中的卡牌查看說明</div>`;
+            if (mode === 'nonrepetitive') {
+                deck = [...allCards];
+                shuffleDeck();
+                drawnHistory = new Set();
+            } else {
+                deck = [...allCards];
+                shuffleDeck();
+                drawnHistory = new Set();
+            }
+            updateUI();
+        }
+
+        // ============================================================
+        //  EVENT BINDINGS
+        // ============================================================
+
+        drawBtn.addEventListener('click', drawCard);
+
+        resetBtn.addEventListener('click', () => {
+            if (mode === 'nonrepetitive') {
+                // reset: clear hand, discarded, rebuild deck
+                hand = [];
+                discarded = [];
+                selectedCardIndex = -1;
+                deck = [...allCards];
+                shuffleDeck();
+                drawnHistory = new Set();
+                descPanel.innerHTML = `<div class="empty">點擊手牌中的卡牌查看說明</div>`;
+                updateUI();
+            } else {
+                // repetitive: just reshuffle deck
+                deck = [...allCards];
+                shuffleDeck();
+                drawnHistory = new Set();
+                // keep hand and discarded as is
+                updateUI();
+            }
+        });
+
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const newMode = btn.dataset.mode;
+                switchMode(newMode);
+            });
+        });
+
+        encyclopediaBtn.addEventListener('click', () => {
+            renderEncyclopedia();
+            modalOverlay.classList.add('active');
+        });
+
+        closeEncyclopediaBtn.addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) modalOverlay.classList.remove('active');
+        });
+
+        // Discard area drop for desktop
+        discardArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            discardArea.classList.add('drag-over');
+        });
+        discardArea.addEventListener('dragleave', (e) => {
+            discardArea.classList.remove('drag-over');
+        });
+        discardArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            discardArea.classList.remove('drag-over');
+            const idx = parseInt(e.dataTransfer.getData('text/plain'));
+            if (!isNaN(idx) && idx >= 0 && idx < hand.length) {
+                discardCard(idx);
+            }
+        });
+
+        // also allow dropping anywhere on the discard area
+        document.addEventListener('dragover', (e) => e.preventDefault());
+        document.addEventListener('drop', (e) => e.preventDefault());
+
+        // keyboard: delete selected
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Delete' || e.key === 'Backspace') {
+                if (selectedCardIndex >= 0 && selectedCardIndex < hand.length) {
+                    discardCard(selectedCardIndex);
+                }
+            }
+        });
+
+        // ============================================================
+        //  INIT
+        // ============================================================
+        // initial setup: repetitive mode, full deck
+        deck = [...allCards];
+        shuffleDeck();
+        mode = 'repetitive';
+        drawnHistory = new Set();
+        updateUI();
+
+        // tooltip global hide
+        document.addEventListener('click', () => {
+            hideTooltip();
+        });
+
+        console.log('🃏 錦囊牌系統已啟動！');
+        console.log(`📦 共 ${allCards.length} 張錦囊牌`);
+    </script>
+</body>
+</html>
